@@ -3,9 +3,14 @@ from flask_cors import CORS
 from routes.projects import projects_bp
 from routes.mindmaps import mindmaps_bp
 from models.database import init_db, get_session, Project
+import os
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS configuration
+# Allow requests from GitHub Pages in production, or all origins in development
+CORS_ORIGIN = os.getenv('CORS_ORIGIN', '*')
+CORS(app, origins=CORS_ORIGIN)
 
 # Initialize database
 init_db()
@@ -30,7 +35,14 @@ app.register_blueprint(mindmaps_bp, url_prefix='/api/mindmaps')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return {'status': 'ok'}, 200
+    return {'status': 'ok', 'message': 'Brainmap API is running'}, 200
+
+@app.route('/', methods=['GET'])
+def root():
+    return {'message': 'Brainmap API', 'health_check': '/api/health'}, 200
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Use PORT from environment variable (Railway sets this automatically)
+    port = int(os.getenv('PORT', 5001))
+    debug = os.getenv('FLASK_ENV') != 'production'
+    app.run(debug=debug, host='0.0.0.0', port=port)

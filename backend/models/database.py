@@ -6,9 +6,22 @@ import os
 
 Base = declarative_base()
 
-# Database path
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database', 'brainmap.db')
-engine = create_engine(f'sqlite:///{DB_PATH}')
+# Database configuration - supports both SQLite (local) and PostgreSQL (production)
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    # Production: Use PostgreSQL from Railway
+    # Railway provides DATABASE_URL in the format: postgresql://...
+    # SQLAlchemy 2.0+ requires 'postgresql://' not 'postgres://'
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    engine = create_engine(DATABASE_URL)
+else:
+    # Development: Use SQLite
+    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database', 'brainmap.db')
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    engine = create_engine(f'sqlite:///{DB_PATH}')
+
 Session = sessionmaker(bind=engine)
 
 class Project(Base):

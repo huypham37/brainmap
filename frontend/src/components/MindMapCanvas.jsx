@@ -57,9 +57,8 @@ const MindMapCanvas = () => {
 
         const existingChildren = currentEdges
           .filter(edge => {
-            const matches = edge.source === parentId &&
-                    (direction === 'left' ? edge.sourceHandle === 'left' : edge.sourceHandle !== 'left')
-            console.log(`Edge ${edge.id}: sourceHandle=${edge.sourceHandle}, matches=${matches}`)
+            const matches = edge.source === parentId && edge.sourceHandle === direction
+            console.log(`Edge ${edge.id}: sourceHandle=${edge.sourceHandle}, direction=${direction}, matches=${matches}`)
             return matches
           })
           .map(edge => currentNodes.find(n => n.id === edge.target))
@@ -132,7 +131,7 @@ const MindMapCanvas = () => {
         const edge = {
           id: `edge-${parentId}-${id}`,
           source: parentId,
-          sourceHandle: direction === 'left' ? 'left' : null,
+          sourceHandle: direction === 'left' ? 'left' : 'right',
           target: id,
           style: { stroke: childColor, strokeWidth: 2 },
           animated: false
@@ -418,6 +417,21 @@ const MindMapCanvas = () => {
         borderRadius: '8px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
       }}>
+        <button
+          onClick={handleSave}
+          style={{
+            padding: '8px 16px',
+            background: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}
+        >
+          Save
+        </button>
         <button
           onClick={handleExportJPEG}
           style={{

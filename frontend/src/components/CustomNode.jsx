@@ -77,8 +77,13 @@ const CustomNode = ({ data, id, selected }) => {
       {/* If node is from left direction, target is on right. Otherwise on left */}
       <Handle type="target" position={data.direction === 'left' ? Position.Right : Position.Left} />
 
-      {/* Source handle on left for root nodes */}
-      {data.level === 0 && <Handle type="source" position={Position.Left} id="left" />}
+      {/* Source handles for root nodes - both left and right */}
+      {data.level === 0 && (
+        <>
+          <Handle type="source" position={Position.Left} id="left" />
+          <Handle type="source" position={Position.Right} id="right" />
+        </>
+      )}
 
       {isEditing ? (
         <input
@@ -156,7 +161,9 @@ const CustomNode = ({ data, id, selected }) => {
 
       {/* Source handle - where edges connect FROM this node */}
       {/* If node is from left, children go left (source on left). Otherwise right. */}
-      <Handle type="source" position={data.direction === 'left' ? Position.Left : Position.Right} />
+      {data.level !== 0 && (
+        <Handle type="source" position={data.direction === 'left' ? Position.Left : Position.Right} />
+      )}
     </div>
   )
 }

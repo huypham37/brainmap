@@ -34,8 +34,23 @@ const MindMapCanvas = () => {
   const reactFlowWrapper = useRef(null)
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    (params) => {
+      setEdges((eds) => {
+        // Get source node to determine edge color
+        const sourceNode = nodes.find(n => n.id === params.source)
+        const edgeColor = sourceNode?.data?.color || '#555'
+        
+        // Create edge with custom styling to match automatic edges
+        const newEdge = {
+          ...params,
+          style: { stroke: edgeColor, strokeWidth: 2 },
+          animated: false
+        }
+        
+        return addEdge(newEdge, eds)
+      })
+    },
+    [nodes, setEdges]
   )
 
   // Add child nodes function
@@ -290,47 +305,53 @@ const MindMapCanvas = () => {
 
   // Export to JPEG
   const handleExportJPEG = useCallback(() => {
-    const nodesBounds = getNodesBounds(getNodes())
-    const viewport = getViewportForBounds(
-      nodesBounds,
-      1920,  // width
-      1080,  // height
-      0.5,   // minZoom
-      2,     // maxZoom
-      0.1    // padding
-    )
+    // First, fit the view to include all nodes and edges
+    reactFlowInstance.fitView({ padding: 0.2, includeHiddenNodes: false, duration: 0 })
+    
+    // Wait a bit for the fitView to apply
+    setTimeout(() => {
+      const nodesBounds = getNodesBounds(getNodes())
+      const viewport = getViewportForBounds(
+        nodesBounds,
+        1920,  // width
+        1080,  // height
+        0.5,   // minZoom
+        2,     // maxZoom
+        0.2    // padding - increased for better edge visibility
+      )
 
-    setSaveStatus('Exporting...')
+      setSaveStatus('Exporting...')
 
-    const viewportElement = document.querySelector('.react-flow__viewport')
+      const viewportElement = document.querySelector('.react-flow__viewport')
 
-    if (viewportElement) {
-      toJpeg(viewportElement, {
-        backgroundColor: '#ffffff',
-        width: 1920,
-        height: 1080,
-        style: {
-          width: '1920px',
-          height: '1080px',
-          transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`
-        },
-        quality: 0.95
-      })
-        .then((dataUrl) => {
-          const link = document.createElement('a')
-          link.download = `mindmap-${Date.now()}.jpg`
-          link.href = dataUrl
-          link.click()
-          setSaveStatus('Exported!')
-          setTimeout(() => setSaveStatus(''), 2000)
+      if (viewportElement) {
+        toJpeg(viewportElement, {
+          backgroundColor: '#ffffff',
+          width: 1920,
+          height: 1080,
+          style: {
+            width: '1920px',
+            height: '1080px',
+            transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`
+          },
+          quality: 0.95
         })
-        .catch((error) => {
-          console.error('Export failed:', error)
-          setSaveStatus('Export failed!')
-          setTimeout(() => setSaveStatus(''), 2000)
-        })
-    }
-  }, [getNodes])
+          .then((dataUrl) => {
+            const link = document.createElement('a')
+            link.download = `mindmap-${Date.now()}.jpg`
+            link.href = dataUrl
+            link.click()
+            setSaveStatus('Exported!')
+            setTimeout(() => setSaveStatus(''), 2000)
+          })
+          .catch((error) => {
+            console.error('Export failed:', error)
+            setSaveStatus('Export failed!')
+            setTimeout(() => setSaveStatus(''), 2000)
+          })
+      }
+    }, 100) // Small delay to ensure fitView completes
+  }, [getNodes, reactFlowInstance])
 
   // Auto-save effect: debounced save when nodes or edges change
   useEffect(() => {
